@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MediaGrab">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230a0a0f'/><circle cx='256' cy='220' r='120' fill='none' stroke='%236C5CE7' stroke-width='24'/><path d='M256 180v80l40-30' fill='none' stroke='%236C5CE7' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/><path d='M180 380h152' stroke='%236C5CE7' stroke-width='20' stroke-linecap='round'/><path d='M256 340v60' stroke='%236C5CE7' stroke-width='20' stroke-linecap='round'/></svg>">
+<title>MediaGrab</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #16161f;
+    --surface2: #1e1e2a;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --text2: #8888a0;
+    --accent: #6C5CE7;
+    --accent-glow: rgba(108, 92, 231, 0.25);
+    --green: #00b894;
+    --red: #e74c3c;
+    --safe-top: env(safe-area-inset-top, 20px);
+    --safe-bottom: env(safe-area-inset-bottom, 20px);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+    padding-top: 12px;
+  }
+
+  .logo {
+    width: 56px; height: 56px;
+    margin: 0 auto 14px;
+    background: linear-gradient(135deg, var(--accent), #a29bfe);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 32px var(--accent-glow);
+  }
+
+  .logo svg { width: 30px; height: 30px; }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+
+  .header p {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  /* Input area */
+  .input-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 4px;
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .input-group:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .input-group input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    padding: 14px 14px;
+    outline: none;
+    font-family: inherit;
+    min-width: 0;
+  }
+
+  .input-group input::placeholder { color: var(--text2); }
+
+  .btn-paste {
+    background: var(--surface2);
+    border: none;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .btn-paste:active { transform: scale(0.95); }
+
+  .btn-download {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #a29bfe);
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: -0.3px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-download:active { transform: scale(0.97); }
+  .btn-download:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .btn-download .spinner {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin: 0 auto;
+  }
+
+  .btn-download.loading .label { display: none; }
+  .btn-download.loading .spinner { display: block; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Status */
+  .status {
+    text-align: center;
+    padding: 16px;
+    margin-top: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    display: none;
+    animation: fadeIn 0.3s;
+  }
+
+  .status.show { display: block; }
+  .status.success { background: rgba(0,184,148,0.12); color: var(--green); }
+  .status.error { background: rgba(231,76,60,0.12); color: var(--red); }
+  .status.info { background: rgba(108,92,231,0.12); color: #a29bfe; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } }
+
+  /* Platforms */
+  .platforms {
+    margin-top: 36px;
+  }
+
+  .platforms h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  .platform-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .platform-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 8px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text2);
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .platform-chip .icon {
+    font-size: 22px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  /* Result area */
+  .result {
+    margin-top: 20px;
+    display: none;
+    animation: fadeIn 0.3s;
+  }
+
+  .result.show { display: block; }
+
+  .result video, .result img {
+    width: 100%;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    background: var(--surface);
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-save {
+    flex: 1;
+    padding: 14px;
+    background: var(--green);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .btn-save:active { transform: scale(0.97); }
+
+  .btn-new {
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 15px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Instructions */
+  .instructions {
+    margin-top: 32px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .instructions h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .instructions ol {
+    padding-left: 20px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+
+  .instructions li { margin-bottom: 4px; }
+  .instructions strong { color: var(--text); font-weight: 500; }
+
+  /* Footer */
+  .footer {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text2);
+    opacity: 0.6;
+    padding-bottom: 20px;
+  }
+
+  /* API selector */
+  .api-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .api-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .api-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .api-btn:active { transform: scale(0.96); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    </div>
+    <h1>MediaGrab</h1>
+    <p>Descarga videos sin marca de agua</p>
+  </div>
+
+  <div class="input-group">
+    <input type="url" id="urlInput" placeholder="Pega el enlace aquí..." autocomplete="off" autocorrect="off">
+    <button class="btn-paste" id="pasteBtn">Pegar</button>
+  </div>
+
+  <div class="api-selector">
+    <button class="api-btn active" data-api="cobalt">Cobalt</button>
+    <button class="api-btn" data-api="saveFrom">SaveFrom</button>
+    <button class="api-btn" data-api="direct">Directo</button>
+  </div>
+
+  <button class="btn-download" id="downloadBtn">
+    <span class="label">Descargar</span>
+    <div class="spinner"></div>
+  </button>
+
+  <div class="status" id="status"></div>
+
+  <div class="result" id="result"></div>
+
+  <div class="platforms">
+    <h2>Plataformas compatibles</h2>
+    <div class="platform-grid">
+      <div class="platform-chip"><span class="icon">🎵</span>TikTok</div>
+      <div class="platform-chip"><span class="icon">📸</span>Instagram</div>
+      <div class="platform-chip"><span class="icon">📘</span>Facebook</div>
+      <div class="platform-chip"><span class="icon">▶️</span>YouTube</div>
+      <div class="platform-chip"><span class="icon">🐦</span>X / Twitter</div>
+      <div class="platform-chip"><span class="icon">📌</span>Pinterest</div>
+      <div class="platform-chip"><span class="icon">🔵</span>Tumblr</div>
+      <div class="platform-chip"><span class="icon">🎮</span>Twitch</div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h3>Cómo guardar en Fotos (iPhone)</h3>
+    <ol>
+      <li>Copia el enlace del video desde la app</li>
+      <li>Pégalo aquí y toca <strong>Descargar</strong></li>
+      <li>Cuando se abra el video, mantén presionado sobre él</li>
+      <li>Selecciona <strong>"Guardar en Fotos"</strong></li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    MediaGrab — Uso personal solamente
+  </div>
+
+</div>
+
+<script>
+const urlInput = document.getElementById('urlInput');
+const pasteBtn = document.getElementById('pasteBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+
+let currentApi = 'cobalt';
+
+// API selector
+document.querySelectorAll('.api-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.api-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentApi = btn.dataset.api;
+  });
+});
+
+// Paste button
+pasteBtn.addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    urlInput.value = text;
+    urlInput.focus();
+  } catch {
+    urlInput.focus();
+    showStatus('Pega el enlace manualmente (mantén presionado el campo)', 'info');
+  }
+});
+
+// Download
+downloadBtn.addEventListener('click', () => processUrl());
+
+// Enter key
+urlInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') processUrl();
+});
+
+function showStatus(msg, type) {
+  statusEl.textContent = msg;
+  statusEl.className = `status show ${type}`;
+}
+
+function hideStatus() {
+  statusEl.className = 'status';
+}
+
+function setLoading(state) {
+  downloadBtn.classList.toggle('loading', state);
+  downloadBtn.disabled = state;
+}
+
+function detectPlatform(url) {
+  const u = url.toLowerCase();
+  if (u.includes('tiktok.com') || u.includes('vm.tiktok')) return 'tiktok';
+  if (u.includes('instagram.com')) return 'instagram';
+  if (u.includes('facebook.com') || u.includes('fb.watch') || u.includes('fb.com')) return 'facebook';
+  if (u.includes('youtube.com') || u.includes('youtu.be') || u.includes('shorts')) return 'youtube';
+  if (u.includes('twitter.com') || u.includes('x.com')) return 'twitter';
+  if (u.includes('pinterest.com') || u.includes('pin.it')) return 'pinterest';
+  if (u.includes('tumblr.com')) return 'tumblr';
+  if (u.includes('twitch.tv')) return 'twitch';
+  return 'unknown';
+}
+
+async function processUrl() {
+  const url = urlInput.value.trim();
+
+  if (!url) {
+    showStatus('Pega un enlace primero', 'error');
+    return;
+  }
+
+  if (!url.startsWith('http')) {
+    showStatus('El enlace debe empezar con http o https', 'error');
+    return;
+  }
+
+  hideStatus();
+  resultEl.className = 'result';
+  resultEl.innerHTML = '';
+  setLoading(true);
+
+  const platform = detectPlatform(url);
+
+  try {
+    if (currentApi === 'cobalt') {
+      await downloadWithCobalt(url);
+    } else if (currentApi === 'saveFrom') {
+      downloadWithSaveFrom(url);
+    } else {
+      downloadDirect(url, platform);
+    }
+  } catch (err) {
+    console.error(err);
+    showStatus('Error. Intenta con otro método o verifica el enlace.', 'error');
+    offerAlternatives(url);
+  }
+
+  setLoading(false);
+}
+
+// Method 1: Cobalt API
+async function downloadWithCobalt(url) {
+  showStatus('Procesando con Cobalt...', 'info');
+
+  try {
+    const resp = await fetch('https://api.cobalt.tools/', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: url,
+        downloadMode: 'auto',
+        filenameStyle: 'basic',
+      })
+    });
+
+    const data = await resp.json();
+
+    if (data.status === 'tunnel' || data.status === 'redirect') {
+      const downloadUrl = data.url;
+      showStatus('¡Listo! Abriendo descarga...', 'success');
+      window.open(downloadUrl, '_blank');
+      showSaveInstructions();
+    } else if (data.status === 'picker' && data.picker) {
+      showStatus('Múltiples archivos encontrados:', 'success');
+      showPicker(data.picker);
+    } else if (data.status === 'error') {
+      throw new Error(data.error?.code || 'Error de Cobalt');
+    } else {
+      throw new Error('Respuesta inesperada');
+    }
+  } catch (err) {
+    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+      showStatus('Cobalt no disponible. Redirigiendo al sitio web...', 'info');
+      setTimeout(() => {
+        window.open(`https://cobalt.tools/#${encodeURIComponent(url)}`, '_blank');
+      }, 1000);
+    } else {
+      throw err;
+    }
+  }
+}
+
+function showPicker(items) {
+  resultEl.innerHTML = '';
+  items.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;';
+
+    if (item.thumb) {
+      const img = document.createElement('img');
+      img.src = item.thumb;
+      img.style.cssText = 'width:60px;height:60px;border-radius:8px;object-fit:cover;';
+      card.appendChild(img);
+    }
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0;';
+    info.innerHTML = `<div style="font-size:14px;font-weight:500;">Archivo ${i + 1}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;">${item.type || 'video'}</div>`;
+    card.appendChild(info);
+
+    const dl = document.createElement('div');
+    dl.textContent = '⬇️';
+    dl.style.fontSize = '20px';
+    card.appendChild(dl);
+
+    card.addEventListener('click', () => {
+      window.open(item.url, '_blank');
+    });
+
+    resultEl.appendChild(card);
+  });
+  resultEl.className = 'result show';
+}
+
+// Method 2: SaveFrom (redirect)
+function downloadWithSaveFrom(url) {
+  showStatus('Abriendo en SaveFrom...', 'info');
+  const encoded = encodeURIComponent(url);
+  window.open(`https://en.savefrom.net/1-${encoded}`, '_blank');
+  setLoading(false);
+  showSaveInstructions();
+}
+
+// Method 3: Direct / platform-specific services
+function downloadDirect(url, platform) {
+  let serviceUrl = '';
+
+  switch(platform) {
+    case 'tiktok':
+      serviceUrl = `https://ssstik.io/es`;
+      break;
+    case 'instagram':
+      serviceUrl = `https://snapinsta.app/es`;
+      break;
+    case 'facebook':
+      serviceUrl = `https://fdown.net/`;
+      break;
+    case 'youtube':
+      serviceUrl = `https://y2mate.com/`;
+      break;
+    case 'twitter':
+      serviceUrl = `https://twittervideodownloader.com/`;
+      break;
+    case 'pinterest':
+      serviceUrl = `https://pinterestvideodownloader.com/es/`;
+      break;
+    default:
+      serviceUrl = `https://cobalt.tools/`;
+  }
+
+  showStatus(`Abriendo servicio para ${platform}... Pega tu enlace allí.`, 'info');
+  window.open(serviceUrl, '_blank');
+  setLoading(false);
+
+  // Copy URL to clipboard for easy pasting
+  navigator.clipboard.writeText(url).catch(() => {});
+  showStatus(`Enlace copiado. Pégalo en el sitio que se abrió.`, 'success');
+}
+
+function offerAlternatives(url) {
+  resultEl.innerHTML = `
+    <div style="padding:16px;background:var(--surface);border-radius:14px;border:1px solid var(--border);">
+      <p style="font-size:14px;margin-bottom:14px;color:var(--text);">Prueba estos métodos alternativos:</p>
+      <button onclick="window.open('https://cobalt.tools/', '_blank')" style="width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:8px;cursor:pointer;font-family:inherit;">
+        🔗 Abrir Cobalt.tools
+      </button>
+      <button onclick="window.open('https://en.savefrom.net/', '_blank')" style="width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:8px;cursor:pointer;font-family:inherit;">
+        🔗 Abrir SaveFrom.net
+      </button>
+      <button onclick="window.open('https://snapinsta.app/es', '_blank')" style="width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;">
+        🔗 Abrir SnapInsta (Instagram)
+      </button>
+    </div>
+  `;
+  resultEl.className = 'result show';
+}
+
+function showSaveInstructions() {
+  resultEl.innerHTML = `
+    <div style="padding:16px;background:rgba(108,92,231,0.08);border:1px solid var(--border);border-radius:14px;margin-top:8px;">
+      <p style="font-size:14px;font-weight:600;margin-bottom:8px;">Para guardar en Fotos:</p>
+      <p style="font-size:13px;color:var(--text2);line-height:1.7;">
+        1. Mantén presionado el video<br>
+        2. Toca <strong style="color:var(--text);">"Descargar archivo enlazado"</strong><br>
+        3. Ve a la app <strong style="color:var(--text);">Archivos</strong> → Descargas<br>
+        4. Toca el video → Compartir → <strong style="color:var(--text);">"Guardar video"</strong>
+      </p>
+    </div>
+  `;
+  resultEl.className = 'result show';
+}
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
