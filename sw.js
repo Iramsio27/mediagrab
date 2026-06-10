@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mediagrab-v2';
+const CACHE_NAME = 'mediagrab-v3';
 const ASSETS = ['/index.html'];
 
 self.addEventListener('install', e => {

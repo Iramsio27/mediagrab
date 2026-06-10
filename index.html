@@ -96,6 +96,42 @@
 
   .hidden{display:none!important}
   .footer{margin-top:40px;text-align:center;font-size:11px;color:var(--text2);opacity:.6;padding-bottom:20px}
+
+  /* ===== EXPLORE ===== */
+  .explore{margin-top:28px}
+  .explore h2{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+  .explore h2 .refresh{background:none;border:none;color:var(--accent2);font-size:16px;cursor:pointer;padding:4px 8px}
+  .chips-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .chips-row::-webkit-scrollbar{display:none}
+  .chip{background:var(--surface);border:1px solid var(--border);color:var(--text2);padding:9px 14px;border-radius:20px;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;font-family:inherit;transition:all .2s;flex-shrink:0}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px var(--accent-glow)}
+  .search-row{display:flex;gap:8px;margin-bottom:14px}
+  .search-row input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;font-family:inherit;min-width:0}
+  .search-row input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+  .search-row button{background:var(--surface2);border:none;color:var(--text);padding:0 16px;border-radius:12px;font-size:16px;cursor:pointer;font-family:inherit}
+  .explore-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .explore-loading{grid-column:1/-1;padding:30px;text-align:center;color:var(--text2);font-size:13px}
+  .explore-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s}
+  .explore-card:active{transform:scale(.97)}
+  .ec-thumb{position:relative;width:100%;aspect-ratio:9/16;background:var(--surface2);overflow:hidden}
+  .ec-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .ec-views{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.7);color:#fff;font-size:11px;padding:3px 8px;border-radius:8px;font-weight:600;backdrop-filter:blur(4px)}
+  .ec-dur{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;font-size:10px;padding:2px 6px;border-radius:6px}
+  .ec-info{padding:10px 12px 12px}
+  .ec-author{font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ec-title{font-size:12px;color:var(--text2);line-height:1.4;max-height:34px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+  /* ===== PREVIEW MODAL ===== */
+  .preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px)}
+  .preview-overlay.show{display:flex;animation:fadeIn .25s}
+  .preview-sheet{background:var(--surface);border:1px solid var(--border);border-radius:20px;max-width:380px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;position:relative}
+  .preview-close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer;z-index:2;line-height:1;display:flex;align-items:center;justify-content:center}
+  .preview-sheet video{width:100%;max-height:55vh;background:#000;display:block}
+  .preview-info{padding:14px 16px}
+  .preview-author{font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:4px}
+  .preview-title{font-size:13px;color:var(--text);line-height:1.4;max-height:60px;overflow:hidden}
+  .preview-stats{display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--text2)}
+  .preview-actions{display:flex;flex-direction:column;gap:8px;padding:0 16px 16px}
 </style>
 </head>
 <body>
@@ -148,8 +184,50 @@
         <div class="platform-chip"><span class="icon">🎮</span>Twitch</div>
       </div>
     </div>
+
+    <!-- EXPLORE TIKTOK -->
+    <div class="explore" id="exploreSection">
+      <h2>
+        <span>Explorar TikTok</span>
+        <button class="refresh" id="exploreRefresh" title="Recargar">↻</button>
+      </h2>
+      <div class="chips-row" id="chipsRow">
+        <button class="chip active" data-cat="trending">🔥 Tendencias MX</button>
+        <button class="chip" data-cat="curiosidades">💡 Curiosidades</button>
+        <button class="chip" data-cat="datos curiosos">🧠 Datos curiosos</button>
+        <button class="chip" data-cat="misterios">🔮 Misterios</button>
+        <button class="chip" data-cat="sabias que">❓ Sabías que</button>
+        <button class="chip" data-cat="ciencia en español">🔬 Ciencia</button>
+        <button class="chip" data-cat="historia">📜 Historia</button>
+        <button class="chip" data-cat="humor español">😂 Humor</button>
+      </div>
+      <div class="search-row">
+        <input type="text" id="exploreSearch" placeholder="Buscar por palabra clave..." autocomplete="off">
+        <button id="exploreSearchBtn">🔍</button>
+      </div>
+      <div class="explore-grid" id="exploreGrid">
+        <div class="explore-loading">Toca una categoría para empezar</div>
+      </div>
+    </div>
   </div>
   <div class="footer">MediaGrab — Uso personal</div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="preview-overlay" id="previewOverlay">
+  <div class="preview-sheet">
+    <button class="preview-close" id="previewClose">×</button>
+    <video id="previewVideo" controls playsinline preload="metadata"></video>
+    <div class="preview-info">
+      <div class="preview-author" id="previewAuthor"></div>
+      <div class="preview-title" id="previewTitle"></div>
+      <div class="preview-stats" id="previewStats"></div>
+    </div>
+    <div class="preview-actions">
+      <button class="btn-action save" id="previewDownload">⬇️ Descargar este video</button>
+      <button class="btn-action secondary" id="previewCancel">Cerrar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -420,6 +498,154 @@ function resetApp() {
   platformsSection.classList.remove('hidden');
   urlInput.focus();
 }
+
+// ===== EXPLORE TIKTOK =====
+const exploreSection = $('exploreSection');
+const exploreGrid = $('exploreGrid');
+const exploreSearch = $('exploreSearch');
+const exploreSearchBtn = $('exploreSearchBtn');
+const exploreRefresh = $('exploreRefresh');
+const chipsRow = $('chipsRow');
+const previewOverlay = $('previewOverlay');
+const previewVideo = $('previewVideo');
+const previewClose = $('previewClose');
+const previewCancel = $('previewCancel');
+const previewDownload = $('previewDownload');
+const previewAuthor = $('previewAuthor');
+const previewTitle = $('previewTitle');
+const previewStats = $('previewStats');
+
+let currentExploreItem = null;
+let currentExploreCat = 'trending';
+
+function fmtNum(n) {
+  if (!n) return '0';
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return String(n);
+}
+function fmtDur(s) {
+  if (!s) return '';
+  const m = Math.floor(s / 60), r = s % 60;
+  return m + ':' + String(r).padStart(2, '0');
+}
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+chipsRow.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  chipsRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  exploreSearch.value = '';
+  currentExploreCat = chip.dataset.cat;
+  loadExplore(currentExploreCat);
+});
+
+exploreSearchBtn.addEventListener('click', () => {
+  const q = exploreSearch.value.trim();
+  if (!q) return;
+  chipsRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  currentExploreCat = q;
+  loadExplore(q);
+});
+exploreSearch.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); exploreSearchBtn.click(); }
+});
+exploreRefresh.addEventListener('click', () => loadExplore(currentExploreCat));
+
+async function loadExplore(cat) {
+  if (!WORKER_URL) return;
+  exploreGrid.innerHTML = '<div class="explore-loading">Cargando…</div>';
+  try {
+    const body = cat === 'trending'
+      ? { action: 'trending', region: 'mx' }
+      : { action: 'search', keywords: cat };
+    const resp = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    renderExplore(data.items || []);
+  } catch (e) {
+    console.error(e);
+    exploreGrid.innerHTML = '<div class="explore-loading">No se pudo cargar. Revisa tu Worker URL ⚙️</div>';
+  }
+}
+
+function renderExplore(items) {
+  if (!items.length) {
+    exploreGrid.innerHTML = '<div class="explore-loading">Sin resultados para esta búsqueda</div>';
+    return;
+  }
+  exploreGrid.innerHTML = items.map((it, i) => `
+    <div class="explore-card" data-idx="${i}">
+      <div class="ec-thumb">
+        <img src="${escapeHtml(it.cover)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.opacity=.2">
+        <span class="ec-views">▶ ${fmtNum(it.views)}</span>
+        ${it.duration ? `<span class="ec-dur">${fmtDur(it.duration)}</span>` : ''}
+      </div>
+      <div class="ec-info">
+        <div class="ec-author">@${escapeHtml(it.author?.name || '—')}</div>
+        <div class="ec-title">${escapeHtml(it.title || '')}</div>
+      </div>
+    </div>
+  `).join('');
+  exploreGrid.querySelectorAll('.explore-card').forEach(card => {
+    card.addEventListener('click', () => openPreview(items[+card.dataset.idx]));
+  });
+}
+
+function openPreview(item) {
+  currentExploreItem = item;
+  previewVideo.src = item.playUrl || item.hdUrl || '';
+  previewAuthor.textContent = '@' + (item.author?.name || '');
+  previewTitle.textContent = item.title || '';
+  previewStats.innerHTML = `
+    <span>▶ ${fmtNum(item.views)} vistas</span>
+    <span>❤️ ${fmtNum(item.likes)}</span>
+    ${item.duration ? `<span>⏱ ${fmtDur(item.duration)}</span>` : ''}
+  `;
+  previewOverlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closePreview() {
+  previewOverlay.classList.remove('show');
+  previewVideo.pause();
+  previewVideo.src = '';
+  document.body.style.overflow = '';
+}
+previewClose.addEventListener('click', closePreview);
+previewCancel.addEventListener('click', closePreview);
+previewOverlay.addEventListener('click', e => { if (e.target === previewOverlay) closePreview(); });
+previewDownload.addEventListener('click', () => {
+  if (!currentExploreItem) return;
+  urlInput.value = currentExploreItem.tiktokUrl;
+  closePreview();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => processUrl(), 250);
+});
+
+// Auto-cargar tendencias al iniciar (si ya hay worker configurado)
+if (WORKER_URL) {
+  setTimeout(() => loadExplore('trending'), 200);
+}
+
+// Ocultar explorar cuando hay resultado de descarga
+const _origReset = resetApp;
+window.resetApp = function() {
+  _origReset();
+  exploreSection.classList.remove('hidden');
+};
+// Hook para esconder explore al mostrar resultado
+const _resultObserver = new MutationObserver(() => {
+  if (resultEl.classList.contains('show')) exploreSection.classList.add('hidden');
+});
+_resultObserver.observe(resultEl, { attributes: true, attributeFilter: ['class'] });
 
 // ===== SERVICE WORKER =====
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
