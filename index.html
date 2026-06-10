@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MediaGrab">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="manifest.json">
+<title>MediaGrab</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0a0a0f;--surface:#16161f;--surface2:#1e1e2a;--border:#2a2a3a;
+    --text:#e8e8f0;--text2:#8888a0;--accent:#6C5CE7;--accent2:#a29bfe;
+    --accent-glow:rgba(108,92,231,0.25);--green:#00b894;--red:#e74c3c;
+    --safe-top:env(safe-area-inset-top,20px);--safe-bottom:env(safe-area-inset-bottom,20px);
+  }
+  body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
+  .app{max-width:480px;margin:0 auto;padding:24px 20px;position:relative}
+
+  .header{text-align:center;margin-bottom:32px;padding-top:12px}
+  .logo{width:56px;height:56px;margin:0 auto 14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px var(--accent-glow)}
+  .logo svg{width:30px;height:30px}
+  .header h1{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
+  .header p{font-size:13px;color:var(--text2)}
+
+  .settings-toggle{position:absolute;top:calc(var(--safe-top) + 16px);right:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:18px;cursor:pointer}
+
+  .input-group{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:4px;display:flex;gap:4px;margin-bottom:14px;transition:all .2s}
+  .input-group:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+  .input-group input{flex:1;background:none;border:none;color:var(--text);font-size:15px;padding:14px;outline:none;font-family:inherit;min-width:0}
+  .input-group input::placeholder{color:var(--text2)}
+  .btn-paste{background:var(--surface2);border:none;color:var(--text2);font-size:13px;font-weight:500;padding:0 14px;border-radius:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+
+  .btn-download{width:100%;padding:16px;border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--accent),var(--accent2));transition:all .2s}
+  .btn-download:active{transform:scale(.97)}
+  .btn-download:disabled{opacity:.5;pointer-events:none}
+  .btn-download .spinner{display:none;width:20px;height:20px;margin:0 auto;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+  .btn-download.loading .label{display:none}
+  .btn-download.loading .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .status{text-align:center;padding:14px;margin-top:12px;border-radius:12px;font-size:14px;display:none;animation:fadeIn .3s;line-height:1.5}
+  .status.show{display:block}
+  .status.success{background:rgba(0,184,148,.12);color:var(--green)}
+  .status.error{background:rgba(231,76,60,.12);color:var(--red)}
+  .status.info{background:rgba(108,92,231,.12);color:var(--accent2)}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}}
+
+  .result{margin-top:16px;display:none;animation:fadeIn .4s}
+  .result.show{display:block}
+
+  .media-container{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:12px}
+  .media-container video{width:100%;max-height:65vh;display:block;background:#000}
+  .media-container img{width:100%;display:block}
+
+  .progress-bar{width:100%;height:6px;background:var(--surface2);border-radius:3px;margin-top:12px;overflow:hidden;display:none}
+  .progress-bar.show{display:block}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:3px;transition:width .3s;width:0%}
+
+  .result-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .btn-action{width:100%;padding:16px;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn-action:active{transform:scale(.97)}
+  .btn-action.save{background:var(--green);color:#fff}
+  .btn-action.secondary{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+
+  .picker-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s}
+  .picker-item:active{background:var(--surface2);transform:scale(.98)}
+  .picker-item .pi-icon{width:44px;height:44px;border-radius:12px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .picker-item .pi-info{flex:1}
+  .picker-item .pi-title{font-size:14px;font-weight:600}
+  .picker-item .pi-desc{font-size:12px;color:var(--text2);margin-top:2px}
+
+  .platforms{margin-top:28px}
+  .platforms h2{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+  .platform-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .platform-chip{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 8px;text-align:center;font-size:11px;color:var(--text2);font-weight:500}
+  .platform-chip .icon{font-size:22px;margin-bottom:6px;display:block}
+
+  .setup-screen{display:none;animation:fadeIn .3s}
+  .setup-screen.show{display:block}
+  .setup-screen h2{font-size:18px;font-weight:700;margin-bottom:8px}
+  .setup-screen .subtitle{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+  .setup-step{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px}
+  .setup-step .step-num{display:inline-block;background:var(--accent);color:#fff;width:24px;height:24px;border-radius:8px;text-align:center;font-size:13px;font-weight:700;line-height:24px;margin-bottom:10px}
+  .setup-step h3{font-size:15px;font-weight:600;margin-bottom:6px}
+  .setup-step p{font-size:13px;color:var(--text2);line-height:1.6}
+  .setup-step a{color:var(--accent2);text-decoration:none}
+  .worker-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-top:16px}
+  .worker-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+  .worker-input::placeholder{color:var(--text2)}
+  .btn-save-url{width:100%;padding:16px;border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--accent),var(--accent2));margin-top:12px}
+
+  .hidden{display:none!important}
+  .footer{margin-top:40px;text-align:center;font-size:11px;color:var(--text2);opacity:.6;padding-bottom:20px}
+</style>
+</head>
+<body>
+<div class="app">
+  <button class="settings-toggle" id="settingsBtn">⚙️</button>
+
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </div>
+    <h1>MediaGrab</h1>
+    <p>Descarga videos sin marca de agua</p>
+  </div>
+
+  <!-- SETUP -->
+  <div class="setup-screen" id="setupScreen">
+    <h2>⚡ Configuración inicial</h2>
+    <p class="subtitle">Solo una vez. Necesitas un mini-servidor gratuito en Cloudflare para que las descargas funcionen directo.</p>
+    <div class="setup-step"><span class="step-num">1</span><h3>Crear cuenta en Cloudflare</h3><p>Ve a <a href="https://dash.cloudflare.com/sign-up" target="_blank">dash.cloudflare.com/sign-up</a> y crea una cuenta gratis.</p></div>
+    <div class="setup-step"><span class="step-num">2</span><h3>Crear un Worker</h3><p>Ve a <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/workers/new" target="_blank">Workers & Pages</a> → Create → "Hello World" → ponle nombre → Deploy.</p></div>
+    <div class="setup-step"><span class="step-num">3</span><h3>Pegar el código</h3><p>Toca <strong style="color:var(--text)">Edit Code</strong>. Borra todo y pega el código del archivo <strong style="color:var(--text)">worker.js</strong>. Toca <strong style="color:var(--text)">Deploy</strong>.</p></div>
+    <div class="setup-step"><span class="step-num">4</span><h3>Copia tu URL</h3><p>Tu Worker tendrá una URL tipo:<br><strong style="color:var(--text)">https://mediagrab.tu-usuario.workers.dev</strong></p></div>
+    <input class="worker-input" id="workerUrlInput" type="url" placeholder="https://tu-worker.tu-usuario.workers.dev">
+    <button class="btn-save-url" id="saveWorkerBtn">Guardar y continuar</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-screen" id="mainScreen">
+    <div class="input-group">
+      <input type="url" id="urlInput" placeholder="Pega el enlace aquí..." autocomplete="off" autocorrect="off">
+      <button class="btn-paste" id="pasteBtn">Pegar</button>
+    </div>
+    <button class="btn-download" id="downloadBtn">
+      <span class="label">Descargar</span>
+      <div class="spinner"></div>
+    </button>
+    <div class="status" id="status"></div>
+    <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="result" id="result"></div>
+    <div class="platforms" id="platformsSection">
+      <h2>Plataformas compatibles</h2>
+      <div class="platform-grid">
+        <div class="platform-chip"><span class="icon">🎵</span>TikTok</div>
+        <div class="platform-chip"><span class="icon">📸</span>Instagram</div>
+        <div class="platform-chip"><span class="icon">📘</span>Facebook</div>
+        <div class="platform-chip"><span class="icon">▶️</span>YouTube</div>
+        <div class="platform-chip"><span class="icon">🐦</span>X / Twitter</div>
+        <div class="platform-chip"><span class="icon">📌</span>Pinterest</div>
+        <div class="platform-chip"><span class="icon">🔵</span>Tumblr</div>
+        <div class="platform-chip"><span class="icon">🎮</span>Twitch</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">MediaGrab — Uso personal</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const setupScreen = $('setupScreen'), mainScreen = $('mainScreen');
+const workerUrlInput = $('workerUrlInput'), saveWorkerBtn = $('saveWorkerBtn');
+const urlInput = $('urlInput'), pasteBtn = $('pasteBtn');
+const downloadBtn = $('downloadBtn'), statusEl = $('status');
+const resultEl = $('result'), progressBar = $('progressBar'), progressFill = $('progressFill');
+const platformsSection = $('platformsSection');
+
+let WORKER_URL = localStorage.getItem('workerUrl') || '';
+let currentMediaUrl = '';
+let currentFilename = '';
+
+// ===== INIT =====
+(function init() { WORKER_URL ? showMain() : showSetup(); })();
+
+function showSetup() { setupScreen.classList.add('show'); mainScreen.classList.add('hidden'); workerUrlInput.value = WORKER_URL; }
+function showMain() { setupScreen.classList.remove('show'); mainScreen.classList.remove('hidden'); }
+
+$('settingsBtn').addEventListener('click', () => {
+  setupScreen.classList.contains('show') ? (WORKER_URL && showMain()) : showSetup();
+});
+
+saveWorkerBtn.addEventListener('click', () => {
+  let url = workerUrlInput.value.trim().replace(/\/+$/, '');
+  if (!url.startsWith('https://')) { alert('La URL debe empezar con https://'); return; }
+  WORKER_URL = url;
+  localStorage.setItem('workerUrl', url);
+  showMain();
+});
+
+// ===== PASTE =====
+pasteBtn.addEventListener('click', async () => {
+  try { urlInput.value = await navigator.clipboard.readText(); }
+  catch { urlInput.focus(); showStatus('Mantén presionado el campo y pega manualmente', 'info'); }
+});
+
+// ===== STATUS =====
+function showStatus(msg, type) { statusEl.textContent = msg; statusEl.className = `status show ${type}`; }
+function hideStatus() { statusEl.className = 'status'; }
+function setLoading(s) { downloadBtn.classList.toggle('loading', s); downloadBtn.disabled = s; }
+function showProgress(pct) { progressBar.classList.add('show'); progressFill.style.width = pct + '%'; }
+function hideProgress() { progressBar.classList.remove('show'); progressFill.style.width = '0%'; }
+
+// ===== DOWNLOAD FLOW =====
+downloadBtn.addEventListener('click', processUrl);
+urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') processUrl(); });
+
+async function processUrl() {
+  const url = urlInput.value.trim();
+  if (!url) { showStatus('Pega un enlace primero', 'error'); return; }
+  if (!url.startsWith('http')) { showStatus('El enlace debe empezar con http o https', 'error'); return; }
+  if (!WORKER_URL) { showSetup(); return; }
+
+  hideStatus(); hideProgress();
+  resultEl.className = 'result'; resultEl.innerHTML = '';
+  setLoading(true);
+  showStatus('🔍 Buscando video...', 'info');
+
+  try {
+    // Step 1: Get the media URL
+    const resp = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, downloadMode: 'auto' })
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    if (data.status === 'tunnel' || data.status === 'redirect') {
+      currentMediaUrl = data.url;
+      currentFilename = data.filename || 'mediagrab_video.mp4';
+      showStatus('✅ Video encontrado. Descargando...', 'success');
+      await downloadAndShow(data.url, data.filename || 'mediagrab_video.mp4');
+
+    } else if (data.status === 'picker' && data.picker) {
+      showStatus(`📂 ${data.picker.length} archivos encontrados`, 'success');
+      showPicker(data.picker);
+
+    } else if (data.status === 'error') {
+      showStatus(`Error: ${data.error || 'No se pudo procesar este enlace'}`, 'error');
+    } else {
+      showStatus('No se pudo procesar. Verifica el enlace.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('Failed to fetch')) {
+      showStatus('No se pudo conectar al servidor. Verifica tu Worker URL en ⚙️', 'error');
+    } else {
+      showStatus('Error: ' + err.message, 'error');
+    }
+  }
+  setLoading(false);
+}
+
+// ===== DOWNLOAD VIA PROXY AND SHOW =====
+async function downloadAndShow(mediaUrl, filename) {
+  showProgress(10);
+  showStatus('⬇️ Descargando archivo...', 'info');
+
+  try {
+    // Download through our proxy to avoid CORS
+    const resp = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'proxy', mediaUrl, filename })
+    });
+
+    if (!resp.ok) throw new Error('Error al descargar');
+
+    showProgress(50);
+
+    const blob = await resp.blob();
+    showProgress(90);
+
+    const contentType = blob.type || 'video/mp4';
+    const isVideo = contentType.includes('video') || filename.includes('.mp4');
+    const isImage = contentType.includes('image') || /\.(jpg|jpeg|png|webp)/.test(filename);
+    const isAudio = contentType.includes('audio') || /\.(mp3|m4a)/.test(filename);
+
+    const blobUrl = URL.createObjectURL(blob);
+    showProgress(100);
+
+    // Store blob for save action
+    window._downloadBlob = blob;
+    window._blobUrl = blobUrl;
+    window._filename = filename;
+    window._contentType = contentType;
+
+    let mediaHtml = '';
+
+    if (isVideo) {
+      mediaHtml = `<div class="media-container"><video controls playsinline preload="auto" src="${blobUrl}"></video></div>`;
+    } else if (isImage) {
+      mediaHtml = `<div class="media-container"><img src="${blobUrl}" alt=""></div>`;
+    } else if (isAudio) {
+      mediaHtml = `<div class="media-container" style="padding:24px"><audio controls src="${blobUrl}" style="width:100%"></audio></div>`;
+    } else {
+      mediaHtml = `<div class="media-container"><video controls playsinline preload="auto" src="${blobUrl}"></video></div>`;
+    }
+
+    mediaHtml += `
+      <div class="result-actions">
+        <button class="btn-action save" onclick="saveToPhotos()">
+          📲 Guardar en Fotos
+        </button>
+        <button class="btn-action secondary" onclick="resetApp()">
+          ✨ Descargar otro
+        </button>
+      </div>
+    `;
+
+    resultEl.innerHTML = mediaHtml;
+    resultEl.className = 'result show';
+    platformsSection.classList.add('hidden');
+    hideProgress();
+    showStatus('✅ ¡Listo! Toca "Guardar en Fotos"', 'success');
+
+  } catch (err) {
+    console.error(err);
+    hideProgress();
+    // Fallback: open in new tab
+    showStatus('No se pudo descargar directo. Abriendo en nueva pestaña...', 'info');
+    resultEl.innerHTML = `
+      <div class="result-actions">
+        <a href="${mediaUrl}" target="_blank" class="btn-action save" style="text-decoration:none;text-align:center">
+          🔗 Abrir video en nueva pestaña
+        </a>
+        <button class="btn-action secondary" onclick="resetApp()">✨ Nuevo</button>
+      </div>
+      <p style="font-size:12px;color:var(--text2);text-align:center;margin-top:10px;line-height:1.6;">
+        En la nueva pestaña: mantén presionado el video → "Descargar archivo enlazado" → ve a Archivos → compártelo a Fotos
+      </p>
+    `;
+    resultEl.className = 'result show';
+    platformsSection.classList.add('hidden');
+  }
+}
+
+// ===== SAVE TO PHOTOS (Web Share API) =====
+async function saveToPhotos() {
+  const blob = window._downloadBlob;
+  const filename = window._filename || 'mediagrab_video.mp4';
+  const contentType = window._contentType || 'video/mp4';
+
+  if (!blob) {
+    showStatus('Error: no hay archivo para guardar', 'error');
+    return;
+  }
+
+  // Determine proper extension
+  let ext = '.mp4';
+  if (contentType.includes('image/jpeg') || filename.includes('.jpg')) ext = '.jpg';
+  else if (contentType.includes('image/png')) ext = '.png';
+  else if (contentType.includes('image/webp')) ext = '.webp';
+  else if (contentType.includes('audio/mpeg') || filename.includes('.mp3')) ext = '.mp3';
+
+  const finalName = filename.includes('.') ? filename : filename + ext;
+  const file = new File([blob], finalName, { type: contentType });
+
+  // Method 1: Web Share API (best for iOS - shows "Save Video" option)
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'MediaGrab'
+      });
+      showStatus('✅ ¡Guardado!', 'success');
+      return;
+    } catch (e) {
+      // User cancelled or error - try fallback
+      if (e.name === 'AbortError') return; // User cancelled, that's ok
+    }
+  }
+
+  // Method 2: Download via blob URL (fallback)
+  try {
+    const a = document.createElement('a');
+    a.href = window._blobUrl;
+    a.download = finalName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showStatus('⬇️ Descargando... Ve a Archivos → Descargas → Compártelo a Fotos', 'info');
+  } catch (e) {
+    showStatus('Abre el video y mantén presionado para guardar', 'info');
+  }
+}
+
+// ===== PICKER =====
+function showPicker(items) {
+  let html = '';
+  items.forEach((item, i) => {
+    const isImg = item.type === 'image';
+    html += `
+      <div class="picker-item" onclick="pickItem('${item.url}', '${item.type || 'video'}_${i+1}${isImg ? '.jpg' : '.mp4'}')">
+        <div class="pi-icon">${isImg ? '🖼️' : '🎬'}</div>
+        <div class="pi-info">
+          <div class="pi-title">${isImg ? 'Imagen' : 'Video'} ${i + 1}</div>
+          <div class="pi-desc">Toca para descargar</div>
+        </div>
+        <span style="color:var(--accent);font-size:22px">›</span>
+      </div>
+    `;
+  });
+  resultEl.innerHTML = html;
+  resultEl.className = 'result show';
+  platformsSection.classList.add('hidden');
+}
+
+async function pickItem(mediaUrl, filename) {
+  resultEl.innerHTML = '';
+  setLoading(true);
+  await downloadAndShow(mediaUrl, filename);
+  setLoading(false);
+}
+
+// ===== RESET =====
+function resetApp() {
+  if (window._blobUrl) URL.revokeObjectURL(window._blobUrl);
+  window._downloadBlob = null; window._blobUrl = null; window._filename = null;
+  urlInput.value = '';
+  resultEl.className = 'result'; resultEl.innerHTML = '';
+  hideStatus(); hideProgress();
+  platformsSection.classList.remove('hidden');
+  urlInput.focus();
+}
+
+// ===== SERVICE WORKER =====
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
